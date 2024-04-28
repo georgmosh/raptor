@@ -8,6 +8,9 @@ import tiktoken
 import umap
 from sklearn.mixture import GaussianMixture
 
+import os
+from sklearn.cluster import KMeans
+
 # Initialize logging
 logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
 
@@ -185,11 +188,11 @@ class RAPTOR_Clustering(ClusteringAlgorithm):
         return node_clusters
 
 
-def local_clustering(embeddings, cluster_maximum_size=10):
+def local_clustering(embeddings):
     cid = 0.00
     all_local_clusters = [np.array([]) for _ in range(embeddings.shape[0])]
-    for i in range(0, embeddings.shape[0], cluster_maximum_size):
-        for j in range(min(cluster_maximum_size, embeddings.shape[0] - i)):
+    for i in range(0, embeddings.shape[0], int(os.environ["CLUSTER_MAXIMUM_SIZE"])):
+        for j in range(min(int(os.environ["CLUSTER_MAXIMUM_SIZE"]), embeddings.shape[0] - i)):
             all_local_clusters[i + j] = np.append(
                 all_local_clusters[i + j], cid
             )
@@ -250,3 +253,72 @@ class SPATIAL_Clustering(ClusteringAlgorithm):
                 node_clusters.append(cluster_nodes)
 
         return node_clusters
+
+
+def hard_clustering(embeddings):
+    num_clusters = int(np.ceil(embeddings.shape[0]/int(os.environ["CLUSTER_MAXIMUM_SIZE"])))
+    kmeans = KMeans(n_clusters=num_clusters, init='k-means++', random_state=42)
+    kmeans.fit(embeddings)
+
+    all_local_clusters = [np.array([]) for _ in range(embeddings.shape[0])]
+    for i in range(embeddings.shape[0]):
+        all_local_clusters[i] = np.append(
+            all_local_clusters[i], kmeans.labels_[i]
+        )
+
+    return all_local_clusters
+
+class KMEANS_Clustering(ClusteringAlgorithm):
+
+    def perform_clustering(
+        nodes: List[Node],
+        embedding_model_name: str,
+        max_length_in_cluster: int = 3500,
+        tokenizer=tiktoken.get_encoding("cl100k_base"),
+        reduction_dimension: int = 10,
+        threshold: float = 0.1,
+        verbose: bool = False,
+    ) -> List[List[Node]]:
+        # Get the embeddings from the nodes
+        embeddings = np.array([node.embeddings[embedding_model_name] for node in nodes])
+
+        # Perform the clustering
+        clusters = hard_clustering(embeddings)
+
+        # Initialize an empty list to store the clusters of nodes
+        node_clusters = []
+
+        # Iterate over each unique label in the clusters
+        for label in np.unique(np.concatenate(clusters)):
+            # Get the indices of the nodes that belong to this cluster
+            indices = [i for i, cluster in enumerate(clusters) if label in cluster]
+
+            # Add the corresponding nodes to the node_clusters list
+            cluster_nodes = [nodes[i] for i in indices]
+
+            # Base case: if the cluster only has one node, do not attempt to recluster it
+            if len(cluster_nodes) == 1:
+                node_clusters.append(cluster_nodes)
+                continue
+
+            # Calculate the total length of the text in the nodes
+            total_length = sum(
+                [len(tokenizer.encode(node.text)) for node in cluster_nodes]
+            )
+
+            # If the total length exceeds the maximum allowed length, recluster this cluster
+            if total_length > max_length_in_cluster:
+                if verbose:
+                    logging.info(
+                        f"reclustering cluster with {len(cluster_nodes)} nodes"
+                    )
+                node_clusters.extend(
+                    KMEANS_Clustering.perform_clustering(
+                        cluster_nodes, embedding_model_name, max_length_in_cluster
+                    )
+                )
+            else:
+                node_clusters.append(cluster_nodes)
+
+        return node_clusters
+
