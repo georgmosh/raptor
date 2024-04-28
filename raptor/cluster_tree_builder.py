@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
 from typing import Dict, List, Set
 
-from .cluster_utils import ClusteringAlgorithm, RAPTOR_Clustering
+from .cluster_utils import ClusteringAlgorithm, RAPTOR_Clustering, SPATIAL_Clustering
 from .tree_builder import TreeBuilder, TreeBuilderConfig
 from .tree_structures import Node, Tree
 from .utils import (distances_from_embeddings, get_children, get_embeddings,
@@ -12,6 +12,30 @@ from .utils import (distances_from_embeddings, get_children, get_embeddings,
                     indices_of_nearest_neighbors_from_distances, split_text)
 
 logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
+
+
+class ClusterSpatialConfig(TreeBuilderConfig):
+    def __init__(
+        self,
+        reduction_dimension=10,
+        clustering_algorithm=SPATIAL_Clustering,  # Default to RAPTOR clustering
+        clustering_params={},  # Pass additional params as a dict
+        *args,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+        self.reduction_dimension = reduction_dimension
+        self.clustering_algorithm = clustering_algorithm
+        self.clustering_params = clustering_params
+
+    def log_config(self):
+        base_summary = super().log_config()
+        cluster_tree_summary = f"""
+        Reduction Dimension: {self.reduction_dimension}
+        Clustering Algorithm: {self.clustering_algorithm.__name__}
+        Clustering Parameters: {self.clustering_params}
+        """
+        return base_summary + cluster_tree_summary
 
 
 class ClusterTreeConfig(TreeBuilderConfig):
@@ -42,7 +66,7 @@ class ClusterTreeBuilder(TreeBuilder):
     def __init__(self, config) -> None:
         super().__init__(config)
 
-        if not isinstance(config, ClusterTreeConfig):
+        if not isinstance(config, ClusterTreeConfig) and not isinstance(config, ClusterSpatialConfig):
             raise ValueError("config must be an instance of ClusterTreeConfig")
         self.reduction_dimension = config.reduction_dimension
         self.clustering_algorithm = config.clustering_algorithm

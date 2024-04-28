@@ -9,6 +9,8 @@ from .tree_builder import TreeBuilder, TreeBuilderConfig
 from .tree_retriever import TreeRetriever, TreeRetrieverConfig
 from .tree_structures import Node, Tree
 
+from raptor.cluster_tree_builder import ClusterSpatialConfig
+
 # Define a dictionary to map supported tree builders to their respective configs
 supported_tree_builders = {"cluster": (ClusterTreeBuilder, ClusterTreeConfig)}
 
@@ -103,6 +105,9 @@ class RetrievalAugmentationConfig:
                 embedding_models=tb_embedding_models,
                 cluster_embedding_model=tb_cluster_embedding_model,
             )
+
+        elif isinstance(tree_builder_config, ClusterSpatialConfig):
+            pass
 
         elif not isinstance(tree_builder_config, tree_builder_config_class):
             raise ValueError(
