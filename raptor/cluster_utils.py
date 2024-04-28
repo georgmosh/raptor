@@ -185,7 +185,20 @@ class RAPTOR_Clustering(ClusteringAlgorithm):
         return node_clusters
 
 
+def local_clustering(embeddings, cluster_maximum_size=10):
+    cid = 0.00
+    all_local_clusters = [np.array([]) for _ in range(embeddings.shape[0])]
+    for i in range(0, embeddings.shape[0], cluster_maximum_size):
+        for j in range(min(cluster_maximum_size, embeddings.shape[0] - i)):
+            all_local_clusters[i + j] = np.append(
+                all_local_clusters[i + j], cid
+            )
+        cid += 1
+
+    return all_local_clusters
+
 class SPATIAL_Clustering(ClusteringAlgorithm):
+
     def perform_clustering(
         nodes: List[Node],
         embedding_model_name: str,
@@ -199,9 +212,7 @@ class SPATIAL_Clustering(ClusteringAlgorithm):
         embeddings = np.array([node.embeddings[embedding_model_name] for node in nodes])
 
         # Perform the clustering
-        clusters = perform_clustering(
-            embeddings, dim=reduction_dimension, threshold=threshold
-        )
+        clusters = local_clustering(embeddings)
 
         # Initialize an empty list to store the clusters of nodes
         node_clusters = []

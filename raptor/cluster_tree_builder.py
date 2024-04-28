@@ -18,7 +18,7 @@ class ClusterSpatialConfig(TreeBuilderConfig):
     def __init__(
         self,
         reduction_dimension=10,
-        clustering_algorithm=SPATIAL_Clustering,  # Default to RAPTOR clustering
+        clustering_algorithm=SPATIAL_Clustering,  # Default to SPATIAL (local) clustering
         clustering_params={},  # Pass additional params as a dict
         *args,
         **kwargs,
