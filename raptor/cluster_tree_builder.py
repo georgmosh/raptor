@@ -133,7 +133,7 @@ class ClusterTreeBuilder(TreeBuilder):
                 )
 
                 next_node_embeddings = {
-                    model_name: np.average(np.array([cluster[i].embeddings['OpenAI'] for i in range(len(cluster))]), axis=0).tolist()
+                    model_name: np.average(np.array([cluster[i].embeddings[self.cluster_embedding_model] for i in range(len(cluster))]), axis=0).tolist()
                     for model_name, model in self.embedding_models.items()
                 }
                 new_parent_node = Node(summarized_text, next_node_index, {node.index for node in cluster}, next_node_embeddings)
