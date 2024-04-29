@@ -2,6 +2,7 @@ import os
 from raptor import RetrievalAugmentation, RetrievalAugmentationConfig
 from raptor.cluster_tree_builder import ClusterSpatialConfig, ClusterHardConfig
 from raptor.SummarizationModels import BlindSummarizationReverseModel
+from raptor.QAModels import GPT3Turbo16kQAModel
 
 os.environ["OPENAI_API_KEY"] = "I_LOVE_LASAGNA"
 os.environ["CLUSTER_MAXIMUM_SIZE"] = "10"
@@ -69,7 +70,8 @@ tree_builder_config = ClusterSpatialConfig(
     cluster_embedding_model="OpenAI",
 )
 
-retrieval_augmentation_config = RetrievalAugmentationConfig(tree_builder_config=tree_builder_config)
+retrieval_augmentation_config = RetrievalAugmentationConfig(tree_builder_config=tree_builder_config,
+                                                            qa_model=GPT3Turbo16kQAModel())
 RA = RetrievalAugmentation(config=retrieval_augmentation_config)
 
 # construct the tree
