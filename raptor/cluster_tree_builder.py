@@ -124,18 +124,24 @@ class ClusterTreeBuilder(TreeBuilder):
                 max_tokens=summarization_length,
             )
 
-            logging.info(
-                f"Node Texts Length: {len(self.tokenizer.encode(node_texts))}, Summarized Text Length: {len(self.tokenizer.encode(summarized_text))}"
-            )
 
             if isinstance(summarized_text, list):
                 summarized_text = "\n\n".join(summarized_text)
+
+                logging.info(
+                    f"Node Texts Length: {len(self.tokenizer.encode(node_texts))}, Summarized Text Length: {len(self.tokenizer.encode(summarized_text))}"
+                )
+
                 next_node_embeddings = {
                     model_name: np.average(np.array([cluster[i].embeddings['OpenAI'] for i in range(len(cluster))]), axis=0).tolist()
                     for model_name, model in self.embedding_models.items()
                 }
                 new_parent_node = Node(summarized_text, next_node_index, {node.index for node in cluster}, next_node_embeddings)
             else:
+                logging.info(
+                    f"Node Texts Length: {len(self.tokenizer.encode(node_texts))}, Summarized Text Length: {len(self.tokenizer.encode(summarized_text))}"
+                )
+
                 __, new_parent_node = self.create_node(
                     next_node_index, summarized_text, {node.index for node in cluster}
                 )

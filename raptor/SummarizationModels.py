@@ -87,5 +87,5 @@ class BlindSummarizationReverseModel(BaseSummarizationModel):
         pass
 
     def summarize(self, context, max_tokens=150):
-        basic_retrieval_units = context.split("\n\n")
-        return context if len(basic_retrieval_units) > 1 else basic_retrieval_units
+        basic_retrieval_units = context.split("\n\n")[:-1]
+        return basic_retrieval_units if len(basic_retrieval_units) > 1 else context
