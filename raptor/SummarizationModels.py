@@ -72,3 +72,11 @@ class GPT3SummarizationModel(BaseSummarizationModel):
         except Exception as e:
             print(e)
             return e
+
+
+class BlindSummarizationModel(BaseSummarizationModel):
+    def __init__(self):
+        pass
+
+    def summarize(self, context, max_tokens=150):
+        return context
