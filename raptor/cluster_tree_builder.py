@@ -11,6 +11,8 @@ from .utils import (distances_from_embeddings, get_children, get_embeddings,
                     get_node_list, get_text,
                     indices_of_nearest_neighbors_from_distances, split_text)
 
+import numpy as np
+
 logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
 
 
@@ -126,9 +128,17 @@ class ClusterTreeBuilder(TreeBuilder):
                 f"Node Texts Length: {len(self.tokenizer.encode(node_texts))}, Summarized Text Length: {len(self.tokenizer.encode(summarized_text))}"
             )
 
-            __, new_parent_node = self.create_node(
-                next_node_index, summarized_text, {node.index for node in cluster}
-            )
+            if isinstance(summarized_text, list):
+                summarized_text = "\n\n".join(summarized_text)
+                next_node_embeddings = {
+                    model_name: np.average(np.array([cluster[i].embeddings['OpenAI'] for i in range(len(cluster))]), axis=0).tolist()
+                    for model_name, model in self.embedding_models.items()
+                }
+                new_parent_node = Node(summarized_text, next_node_index, {node.index for node in cluster}, next_node_embeddings)
+            else:
+                __, new_parent_node = self.create_node(
+                    next_node_index, summarized_text, {node.index for node in cluster}
+                )
 
             with lock:
                 new_level_nodes[next_node_index] = new_parent_node
