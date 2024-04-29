@@ -29,6 +29,36 @@ class OpenAIEmbeddingModel(BaseEmbeddingModel):
         )
 
 
+class OpenAISmallEmbeddingModel(BaseEmbeddingModel):
+    def __init__(self, model="text-embedding-3-small"):
+        self.client = OpenAI()
+        self.model = model
+
+    @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
+    def create_embedding(self, text):
+        text = text.replace("\n", " ")
+        return (
+            self.client.embeddings.create(input=[text], model=self.model)
+            .data[0]
+            .embedding
+        )
+
+
+class OpenAILargeEmbeddingModel(BaseEmbeddingModel):
+    def __init__(self, model="text-embedding-3-large"):
+        self.client = OpenAI()
+        self.model = model
+
+    @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(6))
+    def create_embedding(self, text):
+        text = text.replace("\n", " ")
+        return (
+            self.client.embeddings.create(input=[text], model=self.model)
+            .data[0]
+            .embedding
+        )
+
+
 class SBertEmbeddingModel(BaseEmbeddingModel):
     def __init__(self, model_name="sentence-transformers/multi-qa-mpnet-base-cos-v1"):
         self.model = SentenceTransformer(model_name)
